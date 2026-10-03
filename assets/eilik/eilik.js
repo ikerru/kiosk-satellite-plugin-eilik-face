@@ -2,7 +2,7 @@
   // KS entrega las opciones del plugin en el fragmento de la URL.
   const o = Object.assign(
     {state: 'idle', eye: '#35E0FF', bg: '#000000', listen: '#7CFF8A', think: '#FFC857', speak: '#FF8AD8',
-     size: 100, mouth: false, sleepMin: 10},
+     size: 100, mouth: false, sleepMin: 10, prev: ''},
     JSON.parse(decodeURIComponent(location.hash.slice(1) || '%7B%7D')));
   const f = document.getElementById('face'), root = document.documentElement.style;
   const rnd = (a, b) => a + Math.random() * (b - a);
@@ -11,11 +11,12 @@
   const look = (x, y) => { f.style.setProperty('--lx', x + 'vmin'); f.style.setProperty('--ly', y + 'vmin'); };
   const blink = () => { cls('blink', true); later(() => cls('blink', false), 130); };
 
-  root.setProperty('--eye', {listening: o.listen, thinking: o.think, speaking: o.speak}[o.state] || o.eye);
+  const col = st => ({listening: o.listen, thinking: o.think, speaking: o.speak}[st] || o.eye);
+  const prev = o.prev || o.state;
   root.setProperty('--bg', o.bg);
   root.setProperty('--s', o.size / 100);
-  f.classList.add(o.state);
-  document.body.classList.toggle('mouth-on', !!o.mouth && o.state === 'speaking');
+  root.setProperty('--eye', col(prev));
+  f.classList.add(prev);
 
   const scenes = {
     idle() {
@@ -42,5 +43,11 @@
       (function loop() { cls('happy', true); later(() => cls('happy', false), 450); later(loop, rnd(1500, 3000)); })();
     }
   };
-  (scenes[o.state] || scenes.idle)();
+  // Dos fotogramas con el aspecto anterior y luego el nuevo, para que las transiciones CSS se vean.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    f.classList.remove(prev); f.classList.add(o.state);
+    root.setProperty('--eye', col(o.state));
+    document.body.classList.toggle('mouth-on', !!o.mouth && o.state === 'speaking');
+    (scenes[o.state] || scenes.idle)();
+  }));
 })();
