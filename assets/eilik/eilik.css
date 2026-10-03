@@ -4,10 +4,14 @@ html,body{height:100%;background:var(--bg);overflow:hidden}
 body{display:grid;place-items:center}
 #face{position:relative;display:flex;gap:calc(14*var(--u)*var(--s));align-items:center;
   transform:translate(var(--lx,0),var(--ly,0));transition:transform .35s cubic-bezier(.3,1.4,.5,1)}
+
+/* ojos */
 .eye{width:calc(20*var(--u)*var(--s));height:calc(28*var(--u)*var(--s));border-radius:calc(9*var(--u)*var(--s));
   background:var(--eye);filter:drop-shadow(0 0 calc(2*var(--u)) var(--eye));
   transition:transform .12s,height .3s,border-radius .3s,background-color .4s,border-width .3s,filter .4s}
-.blink .eye{transform:scaleY(.08)}
+.squint .eye{height:calc(14*var(--u)*var(--s))}
+.wide .eye{transform:scale(1.15)}
+.wink .eye:nth-child(1),.blink .eye{transform:scaleY(.08)}
 .happy .eye{background:transparent;height:calc(13*var(--u)*var(--s));border:calc(3.4*var(--u)*var(--s)) solid var(--eye);
   border-bottom-width:0;border-radius:calc(12*var(--u)*var(--s)) calc(12*var(--u)*var(--s)) 0 0}
 .sleep .eye{height:calc(2.6*var(--u)*var(--s));border-radius:calc(2*var(--u))}
@@ -16,10 +20,31 @@ body{display:grid;place-items:center}
 .thinking .eye{height:calc(21*var(--u)*var(--s))}
 .speaking .eye{animation:talk .42s ease-in-out infinite alternate}
 @keyframes talk{to{transform:translateY(calc(-1.6*var(--u))) scaleY(.82)}}
+
+/* cejas y mejillas: solo aparecen cuando una actividad las pide */
+.brow{position:absolute;top:calc(-7*var(--u)*var(--s));width:calc(17*var(--u)*var(--s));height:calc(2.4*var(--u)*var(--s));
+  border-radius:calc(2*var(--u));background:var(--eye);opacity:0;transition:transform .3s,opacity .3s}
+.brow.l{left:calc(1.5*var(--u)*var(--s))}.brow.r{right:calc(1.5*var(--u)*var(--s))}
+.b-up .brow{opacity:1;transform:translateY(calc(-2.5*var(--u)))}
+.b-sad .brow{opacity:1}.b-sad .brow.l{transform:rotate(-12deg)}.b-sad .brow.r{transform:rotate(12deg)}
+.b-mad .brow{opacity:1}.b-mad .brow.l{transform:rotate(12deg)}.b-mad .brow.r{transform:rotate(-12deg)}
+.cheek{position:absolute;top:calc(30*var(--u)*var(--s));width:calc(9*var(--u)*var(--s));height:calc(4.5*var(--u)*var(--s));
+  border-radius:50%;background:#ff6fa5;opacity:0;transition:opacity .4s}
+.cheek.l{left:calc(5*var(--u)*var(--s))}.cheek.r{right:calc(5*var(--u)*var(--s))}
+.blush .cheek{opacity:.55}
+
+/* boca */
 .mouth,.dots,.z{display:none;position:absolute;left:50%}
 .mouth{top:calc(100% + 7*var(--u));width:calc(10*var(--u)*var(--s));height:calc(var(--mh)*var(--u));
-  background:var(--eye);border-radius:calc(2*var(--u));transform:translateX(-50%);transition:height .1s}
-.mouth-on .mouth{display:block}
+  background:var(--eye);border-radius:calc(2*var(--u));transform:translateX(-50%);transition:width .25s,height .25s,border-radius .25s}
+.mouth-on .mouth,.m-o .mouth,.m-yawn .mouth,.m-smile .mouth{display:block}
+.m-o .mouth{width:calc(4.5*var(--u)*var(--s));height:calc(4.5*var(--u)*var(--s));border-radius:50%;background:transparent;
+  border:calc(1.3*var(--u)) solid var(--eye)}
+.m-yawn .mouth{width:calc(9*var(--u)*var(--s));height:calc(12*var(--u)*var(--s));border-radius:50%}
+.m-smile .mouth{width:calc(12*var(--u)*var(--s));height:calc(5*var(--u)*var(--s));background:transparent;
+  border:calc(1.4*var(--u)) solid var(--eye);border-top:0;border-radius:0 0 calc(12*var(--u)) calc(12*var(--u))}
+
+/* pensando, durmiendo y efectos flotantes */
 .dots{top:calc(-9*var(--u));transform:translateX(-50%);gap:calc(2*var(--u))}
 .thinking .dots{display:flex}
 .dots i{width:calc(2.4*var(--u));height:calc(2.4*var(--u));border-radius:50%;background:var(--eye);animation:dot 1s infinite}
@@ -28,4 +53,7 @@ body{display:grid;place-items:center}
 .z{left:auto;right:calc(-8*var(--u));top:calc(-8*var(--u));color:var(--eye);font:700 calc(7*var(--u)) sans-serif;animation:zz 3s ease-in-out infinite}
 .sleep .z{display:block}
 @keyframes zz{50%{transform:translateY(calc(-3*var(--u)));opacity:.3}}
-@media (prefers-reduced-motion:reduce){.eye,.dots i,.z{animation:none!important}}
+.fx{position:absolute;left:62%;top:calc(100% + 2*var(--u));pointer-events:none}
+.fx span{position:absolute;color:var(--eye);font:700 calc(7*var(--u)) sans-serif;opacity:0;animation:fl 2.4s ease-out forwards}
+@keyframes fl{15%{opacity:1}100%{opacity:0;transform:translate(var(--dx),calc(-18*var(--u)))}}
+@media (prefers-reduced-motion:reduce){.eye,.dots i,.z,.fx span{animation:none!important}}
