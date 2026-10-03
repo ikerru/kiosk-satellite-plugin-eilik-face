@@ -7,7 +7,7 @@
   "minAndroidSdk": 24,
   "entryClass": "eilik.face.EilikFacePlugin",
   "description": "Protector de pantalla con una cara de robot al estilo Eilik. Reacciona al asistente de voz: escucha cuando le hablas, piensa mientras procesa y habla cuando responde.",
-  "author": "TU_NOMBRE",
+  "author": "ikerru",
   "license": "Apache-2.0",
   "capabilities": ["screensaver", "host.read"],
   "settings": [
