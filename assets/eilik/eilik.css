@@ -1,0 +1,32 @@
+:root{--eye:#35E0FF;--bg:#000;--s:1;--u:1vmin;--mh:1.2}
+*{margin:0;box-sizing:border-box}
+html,body{height:100%;background:var(--bg);overflow:hidden}
+body{display:grid;place-items:center;animation:in .25s ease-out}
+@keyframes in{from{opacity:0}}
+#face{position:relative;display:flex;gap:calc(14*var(--u)*var(--s));align-items:center;
+  transform:translate(var(--lx,0),var(--ly,0));transition:transform .35s cubic-bezier(.3,1.4,.5,1)}
+.eye{width:calc(20*var(--u)*var(--s));height:calc(28*var(--u)*var(--s));border-radius:calc(9*var(--u)*var(--s));
+  background:var(--eye);filter:drop-shadow(0 0 calc(2*var(--u)) var(--eye));
+  transition:transform .12s,height .25s,border-radius .25s,background-color .3s,border-width .25s}
+.blink .eye{transform:scaleY(.08)}
+.happy .eye{background:transparent;height:calc(13*var(--u)*var(--s));border:calc(3.4*var(--u)*var(--s)) solid var(--eye);
+  border-bottom-width:0;border-radius:calc(12*var(--u)*var(--s)) calc(12*var(--u)*var(--s)) 0 0}
+.sleep .eye{height:calc(2.6*var(--u)*var(--s));border-radius:calc(2*var(--u))}
+.listening .eye{animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.14)}}
+.thinking .eye{height:calc(21*var(--u)*var(--s))}
+.speaking .eye{animation:talk .42s ease-in-out infinite alternate}
+@keyframes talk{to{transform:translateY(calc(-1.6*var(--u))) scaleY(.82)}}
+.mouth,.dots,.z{display:none;position:absolute;left:50%}
+.mouth{top:calc(100% + 7*var(--u));width:calc(10*var(--u)*var(--s));height:calc(var(--mh)*var(--u));
+  background:var(--eye);border-radius:calc(2*var(--u));transform:translateX(-50%);transition:height .1s}
+.mouth-on .mouth{display:block}
+.dots{top:calc(-9*var(--u));transform:translateX(-50%);gap:calc(2*var(--u))}
+.thinking .dots{display:flex}
+.dots i{width:calc(2.4*var(--u));height:calc(2.4*var(--u));border-radius:50%;background:var(--eye);animation:dot 1s infinite}
+.dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
+@keyframes dot{50%{transform:translateY(calc(-2*var(--u)));opacity:.4}}
+.z{left:auto;right:calc(-8*var(--u));top:calc(-8*var(--u));color:var(--eye);font:700 calc(7*var(--u)) sans-serif;animation:zz 3s ease-in-out infinite}
+.sleep .z{display:block}
+@keyframes zz{50%{transform:translateY(calc(-3*var(--u)));opacity:.3}}
+@media (prefers-reduced-motion:reduce){.eye,.dots i,.z{animation:none!important}}
