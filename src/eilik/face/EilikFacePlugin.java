@@ -30,6 +30,7 @@ public final class EilikFacePlugin implements KioskPlugin {
     private String demo;          // estado forzado por la acción "demo"
     private int demoStep;
     private String published = "";
+    private String lastState;
     private long lastPublish;
     private ScheduledFuture<?> flushTask, wakeTask, demoTask;
 
@@ -150,9 +151,11 @@ public final class EilikFacePlugin implements KioskPlugin {
         o.put("sleepMin", num("sleepMinutes", 10));
         String sig = o.toString();
         if (sig.equals(published)) return;
+        o.put("prev", lastState != null ? lastState : state);
         try {
             host.publishScreensaverAsset(KEY, "Cara Eilik", "eilik/index.html", o);
             published = sig;
+            lastState = state;
             lastPublish = System.currentTimeMillis();
             host.status("Cara: " + state + (usingEntity() ? " (entidad)" : " (eventos)"), false);
         } catch (RuntimeException e) {
