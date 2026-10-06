@@ -11,6 +11,9 @@
 
 ### Added
 
+- Warn when the card's configured entity does not exist, on screen and in the console. The face
+  would otherwise stay idle, which in overlay mode is indistinguishable from the card not working.
+
 - Add an `overlay` option to the card. It contributes no height to the view and draws the face
   fixed over the dashboard only while a voice turn lasts, without intercepting taps, for views whose
   single custom card already draws the whole panel.

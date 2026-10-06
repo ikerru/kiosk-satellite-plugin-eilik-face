@@ -15,6 +15,9 @@ const CSS = `
 .stage.over{position:fixed;inset:0;height:auto;border-radius:0;z-index:1000;pointer-events:none;
   opacity:0;visibility:hidden;transition:opacity .35s ease,visibility .35s}
 .stage.over.on{opacity:1;visibility:visible}
+.stage:has(.notice){opacity:1;visibility:visible}
+.notice{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:1;
+  background:#b3261e;color:#fff;font:600 13px/1.4 sans-serif;padding:6px 12px;border-radius:8px}
 #face{position:relative;display:flex;gap:calc(14*var(--u)*var(--s));align-items:center;
   transform:translate(var(--lx,0),var(--ly,0));transition:transform .35s cubic-bezier(.3,1.4,.5,1)}
 
@@ -99,8 +102,26 @@ class EilikFaceCard extends HTMLElement {
 
     set hass(hass) {
         this._hass = hass;
-        const e = this._cfg.entity ? hass.states[this._cfg.entity] : null;
+        const id = this._cfg.entity;
+        const e = id ? hass.states[id] : null;
+        // Sin entidad válida la cara se queda en reposo, que superpuesta es invisible. Avisar es
+        // la única forma de que un id mal escrito no parezca que la tarjeta no funciona.
+        if (id && !e && !this._warned) {
+            this._warned = true;
+            console.warn(`[eilik-face-card] La entidad "${id}" no existe en Home Assistant. ` +
+                'La cara se quedará en reposo. Revisa el id en Herramientas de desarrollo > Estados.');
+            this._notice(`Entidad desconocida: ${id}`);
+        }
         this._go(e ? (FACE[e.state] || 'idle') : 'idle');
+    }
+
+    /** Aviso visible unos segundos, para que un fallo de configuración no pase desapercibido. */
+    _notice(text) {
+        const n = document.createElement('div');
+        n.className = 'notice';
+        n.textContent = text;
+        this.shadowRoot.querySelector('.stage').appendChild(n);
+        setTimeout(() => n.remove(), 8000);
     }
 
     disconnectedCallback() { this._stop(); if (this._ro) this._ro.disconnect(); }

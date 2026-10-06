@@ -168,6 +168,10 @@ card contributes zero height, so your panel renders as before.
 In overlay mode `bg_color` defaults to `#000000b8`, dimming the dashboard behind the face. Use any
 CSS color, including 8-digit hex for transparency, or `#00000000` for no dimming at all.
 
+Set `entity` to your own entity ID, from **Developer tools → States**. An entity that does not exist
+leaves the face idle forever, which in overlay mode means invisible, so the card says so for a few
+seconds and logs a console warning rather than failing silently.
+
 Then turn on **Show the panel while talking** in the plugin settings. The plugin dismisses the
 screensaver when a voice turn starts and brings it back when the turn ends, so you get the
 screensaver at rest and the live face while talking. It only does this when the screensaver was
