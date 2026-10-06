@@ -17,6 +17,9 @@ public final class EilikFacePlugin implements KioskPlugin {
     private static final String KEY = "eilik";
     private static final long MIN_GAP_MS = 300; // KS admite 4 publicaciones por segundo
 
+    // Diagnóstico opcional: qué hay realmente en pantalla durante un turno de voz.
+    private static final String[] DIAG_EVENTS = {"screensaver.state", "screensaver.view", "screen.state"};
+
     private static final String[] DEMO_SEQ = {"listening", "thinking", "speaking"};
     private static final long[] DEMO_MS = {3000, 3000, 5000};
 
@@ -32,6 +35,10 @@ public final class EilikFacePlugin implements KioskPlugin {
     private String published = "";
     private String lastState;
     private long lastPublish;
+    private int failures;         // publicaciones seguidas rechazadas por KS
+    private boolean diag;         // diagnóstico de pantalla activado en ajustes
+    private Boolean saverActive, screenOn;
+    private String saverView;
     private ScheduledFuture<?> flushTask, wakeTask, demoTask;
 
     @Override public synchronized void start(PluginHost host, Map<String, Object> settings) {
@@ -52,6 +59,14 @@ public final class EilikFacePlugin implements KioskPlugin {
 
     private void apply(Map<String, Object> settings) {
         cfg = new HashMap<>(settings);
+        boolean wantDiag = bool("diagnostics", false);
+        if (wantDiag != diag) {
+            diag = wantDiag;
+            for (String e : DIAG_EVENTS) {
+                if (diag) host.subscribe(e); else host.unsubscribe(e);
+            }
+            if (!diag) { saverActive = null; screenOn = null; saverView = null; }
+        }
         String next = str("assistEntity", "");
         if (next.equals(entityId)) return;
         if (!entityId.isEmpty()) host.unsubscribe("ha.entity." + entityId);
@@ -69,6 +84,9 @@ public final class EilikFacePlugin implements KioskPlugin {
             setWake(true);
         } else if (event.equals("ks.voice.interaction")) {
             setWake(Boolean.TRUE.equals(payload.get("active")));
+        } else if (event.startsWith("ks.screensaver.") || event.equals("ks.screen.state")) {
+            observe(event, payload); // solo informa: no cambia la cara ni publica
+            return;
         } else {
             return;
         }
@@ -131,10 +149,14 @@ public final class EilikFacePlugin implements KioskPlugin {
         catch (RejectedExecutionException e) { return null; }
     }
 
+    /** Espera entre publicaciones. Crece tras cada rechazo de KS, hasta unos 4,8 s. */
+    private long gap() { return MIN_GAP_MS << Math.min(failures, 4); }
+
     private void request() {
         if (flushTask != null && !flushTask.isDone()) return;
-        long wait = Math.max(0, lastPublish + MIN_GAP_MS - System.currentTimeMillis());
-        flushTask = schedule(() -> { synchronized (this) { publish(); } }, wait);
+        long wait = Math.max(0, lastPublish + gap() - System.currentTimeMillis());
+        // flushTask se limpia antes de publicar para que un reintento pueda encolarse desde publish().
+        flushTask = schedule(() -> { synchronized (this) { flushTask = null; publish(); } }, wait);
     }
 
     private void publish() {
@@ -157,10 +179,40 @@ public final class EilikFacePlugin implements KioskPlugin {
             published = sig;
             lastState = state;
             lastPublish = System.currentTimeMillis();
-            host.status("Cara: " + state + (usingEntity() ? " (entidad)" : " (eventos)"), false);
+            failures = 0;
+            host.status(describe("Cara: " + state + (usingEntity() ? " (entidad)" : " (eventos)")), false);
         } catch (RuntimeException e) {
+            // Una llamada rechazada también cuenta para el límite de KS. Sin anotarla, el siguiente
+            // evento publicaría de inmediato y la ráfaga se realimentaría, dejando el protector en
+            // negro mientras durase. Se anota, se espera más y se reintenta aunque no lleguen eventos.
+            lastPublish = System.currentTimeMillis();
+            failures++;
             host.log("No se pudo publicar la cara: " + e.getMessage());
+            host.status("No se pudo publicar la cara: " + e.getMessage(), true);
+            request();
         }
+    }
+
+    // ---- diagnóstico de pantalla ----
+
+    private void observe(String event, Map<String, Object> payload) {
+        if (event.equals("ks.screensaver.state")) saverActive = Boolean.TRUE.equals(payload.get("active"));
+        else if (event.equals("ks.screensaver.view")) {
+            Object v = payload.get("view");
+            saverView = v instanceof String ? (String) v : "atenuado"; // null = modo dim, sin overlay
+        } else if (event.equals("ks.screen.state")) screenOn = Boolean.TRUE.equals(payload.get("on"));
+        String line = describe("Cara: " + resolve());
+        host.log(line);
+        host.status(line, false);
+    }
+
+    /** Añade al mensaje lo observado en pantalla, cuando el diagnóstico está activado. */
+    private String describe(String message) {
+        if (!diag) return message;
+        return message
+            + " · protector: " + (saverActive == null ? "?" : saverActive ? "activo" : "inactivo")
+            + ", vista: " + (saverView == null ? "?" : saverView)
+            + ", pantalla: " + (screenOn == null ? "?" : screenOn ? "encendida" : "apagada");
     }
 
     private String str(String k, String d) { Object v = cfg.get(k); return v instanceof String && !((String) v).isEmpty() ? (String) v : d; }
