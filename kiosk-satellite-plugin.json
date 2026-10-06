@@ -9,7 +9,7 @@
   "description": "Protector de pantalla con una cara de robot al estilo Eilik. Reacciona al asistente de voz: escucha cuando le hablas, piensa mientras procesa y habla cuando responde.",
   "author": "ikerru",
   "license": "Apache-2.0",
-  "capabilities": ["screensaver", "host.read"],
+  "capabilities": ["screensaver", "host.read", "host.control"],
   "settings": [
     {"key": "eyeColor", "title": "Color de los ojos (reposo)", "type": "color", "default": "#35E0FF", "group": "Aspecto"},
     {"key": "bgColor", "title": "Color de fondo", "type": "color", "default": "#000000", "group": "Aspecto"},
@@ -21,6 +21,8 @@
     {"key": "listenColor", "title": "Color al escucharte", "type": "color", "default": "#7CFF8A", "group": "Voz"},
     {"key": "thinkColor", "title": "Color al pensar", "type": "color", "default": "#FFC857", "group": "Voz"},
     {"key": "speakColor", "title": "Color al responder", "type": "color", "default": "#FF8AD8", "group": "Voz"},
+    {"key": "panelOnVoice", "title": "Mostrar el panel al hablar", "type": "boolean", "default": false, "group": "Voz",
+     "description": "KS oculta el protector durante un turno de voz. Con esto, al hablarle se descarta el protector para que se vea el dashboard, donde la tarjeta Cara Eilik sigue la conversación en vivo, y al terminar el protector vuelve. Requiere la tarjeta instalada en el panel."},
     {"key": "diagnostics", "title": "Diagnóstico de pantalla", "type": "boolean", "default": false, "group": "Diagnóstico",
      "description": "Muestra en el estado del plugin qué hay en pantalla (protector, vista y pantalla) para averiguar qué tapa la cara durante un turno de voz. Déjalo apagado en uso normal."}
   ],

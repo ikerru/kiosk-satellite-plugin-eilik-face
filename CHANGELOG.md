@@ -11,6 +11,15 @@
 
 ### Added
 
+- Add a Lovelace custom card under `dashboard/` that draws the same face from the `assist_satellite`
+  entity. It updates live from Home Assistant, so it follows a voice turn without recreating its
+  document and its transitions play out in full.
+
+- Add a **Mostrar el panel al hablar** setting that dismisses the screensaver when a voice turn
+  starts and restores it when the turn ends, so the dashboard card is visible while talking. KS
+  hides the screensaver surface for the length of a turn, which no plugin can prevent. It only
+  acts when the screensaver was already on, and needs the new `host.control` capability.
+
 - Add an opt-in **Diagnóstico de pantalla** setting that observes `screensaver.state`,
   `screensaver.view` and `screen.state` and reports them in the plugin status line, to tell a failed
   publication apart from a KS overlay. The diagnostic events never republish the face.

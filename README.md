@@ -72,6 +72,7 @@ thinking and speaking without saying a word.
 | Listening color | `listenColor` | `#7CFF8A` | |
 | Thinking color | `thinkColor` | `#FFC857` | |
 | Speaking color | `speakColor` | `#FF8AD8` | |
+| Show the panel while talking | `panelOnVoice` | `false` | Hands the screen over to the dashboard during a voice turn. See [Both at once](#both-at-once-screensaver-and-dashboard) |
 | Screen diagnostics | `diagnostics` | `false` | Reports what is actually on screen. See [Troubleshooting](#troubleshooting) |
 
 All settings save automatically and refresh the running screensaver.
@@ -101,26 +102,75 @@ screensaver publications per second. If KS rejects a publication anyway, the plu
 exponentially (up to about 4.8 s) and keeps retrying on its own, so the face comes back even when no
 further voice events arrive.
 
+## Both at once: screensaver and dashboard
+
+**KS hides the screensaver surface for the length of a voice turn.** The screen goes black while you
+talk and the face returns when the assistant finishes. This is KS behavior, not a plugin bug: the
+plugin keeps publishing the face the whole time, but there is nothing on screen to draw it on. The
+SDK offers no way to hold the screensaver surface through a voice turn.
+
+The way around it is to let the **dashboard** draw the face while you talk, because the dashboard
+stays visible — the assist UI only overlays a small part of it.
+
+<img src="docs/images/dashboard-card.png" alt="The card showing the listening, thinking and speaking states" width="760">
+
+`dashboard/eilik-face-card.js` is a Lovelace custom card with the same face. It reads the
+`assist_satellite` entity straight from Home Assistant, so it follows the conversation **live, with
+no reload** — which also means its transitions play out smoothly, unlike the screensaver's.
+
+1. Copy `dashboard/eilik-face-card.js` into Home Assistant's `config/www/`.
+2. Add it under **Settings → Dashboards → Resources** as a JavaScript module,
+   URL `/local/eilik-face-card.js`.
+3. Put the card on the view your kiosk shows:
+
+```yaml
+type: custom:eilik-face-card
+entity: assist_satellite.your_satellite
+height: 400
+mouth: true
+```
+
+| Option | Default | |
+|---|---|---|
+| `entity` | — | Your `assist_satellite.*` entity |
+| `height` | `300` | Card height in pixels |
+| `eye_color` / `bg_color` | `#35E0FF` / `#000000` | Idle eye and background |
+| `listen_color` / `think_color` / `speak_color` | `#7CFF8A` / `#FFC857` / `#FF8AD8` | |
+| `size` | `100` | Face size, as a percentage |
+| `mouth` | `false` | Mouth that moves while speaking |
+| `sleep_minutes` | `10` | Idle minutes before falling asleep. `0` never sleeps |
+
+Then turn on **Show the panel while talking** in the plugin settings. The plugin dismisses the
+screensaver when a voice turn starts and brings it back when the turn ends, so you get the
+screensaver at rest and the live face while talking. It only does this when the screensaver was
+actually on — if you were using the kiosk, it leaves your screen alone.
+
 ## Troubleshooting
 
 ### The screen goes black while I am talking
 
-KS shows a **black background when a plugin's renderer is unavailable**, so a black screen means the
-face is not published — not that something is covering it. Turn on **Screen diagnostics** in the
-plugin settings and watch the plugin status line during a voice turn. It appends what KS reports:
+That is the KS behavior described above. Use the dashboard card to work around it.
+
+To confirm it on your own device, turn on **Screen diagnostics** and watch the plugin status line
+during a voice turn. It appends what KS reports:
 
 ```text
 Cara: speaking (entidad) · protector: activo, vista: dim, pantalla: encendida
 ```
 
-- **`No se pudo publicar la cara: ...`** in the status or log means KS is rejecting the publication,
-  usually the four-per-second limit. The plugin now backs off and recovers by itself.
-- **`protector: activo`** with the face still black points at KS rather than the plugin: full-screen
-  Now Playing removes the rendered document, and dim mode has no overlay at all.
-- **`pantalla: apagada`** means the display itself went off, which is screen-off policy, not the face.
+- **`protector: inactivo`** means KS dismissed the screensaver for the turn.
+- **`No se pudo publicar la cara: ...`** means KS is rejecting the publication, usually the
+  four-per-second limit. The plugin backs off and recovers by itself.
+- **`pantalla: apagada`** means the display itself went off, which is screen-off policy.
 
 Turn the setting back off afterwards. The diagnostic events never republish the face, so leaving it
 on does not add screensaver churn — it only adds log noise.
+
+### Short black flashes between states on the screensaver
+
+Inherent to the SDK: every state change recreates the screensaver document, and there is no
+JavaScript bridge to update a document that is already loaded. The renderer softens it by starting
+in the previous state's color and transitioning. The dashboard card does not have this problem.
 
 ## Notes and limits
 
