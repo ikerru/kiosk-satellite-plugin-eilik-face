@@ -15,6 +15,7 @@ public final class EilikFaceTest {
     static final List<String> subscribed = Collections.synchronizedList(new ArrayList<>());
     static final AtomicInteger attempts = new AtomicInteger();
     static final AtomicBoolean reject = new AtomicBoolean();
+    static final List<String> commands = Collections.synchronizedList(new ArrayList<>());
 
     public static void main(String[] args) throws Exception {
         PluginHost host = host();
@@ -37,6 +38,7 @@ public final class EilikFaceTest {
         plugin.stop();
         rejectedPublicationsBackOffAndRecover();
         diagnosticsObserveWithoutPublishing();
+        panelHandoverOnlyFromAnActiveScreensaver();
         System.out.println("OK");
     }
 
@@ -85,9 +87,40 @@ public final class EilikFaceTest {
         } finally { plugin.stop(); }
     }
 
+    /**
+     * Con el panel activado, un turno de voz debe descartar el protector y devolverlo al acabar,
+     * pero solo si el protector estaba puesto: si el usuario está usando el kiosko no se le toca.
+     */
+    private static void panelHandoverOnlyFromAnActiveScreensaver() throws Exception {
+        reset();
+        Map<String, Object> settings = new HashMap<>();
+        settings.put("panelOnVoice", Boolean.TRUE);
+        EilikFacePlugin plugin = new EilikFacePlugin();
+        plugin.start(host(), settings);
+        try {
+            plugin.onEvent("ks.wakeword.detected", new HashMap<String, Object>());
+            Thread.sleep(600);
+            check(commands.isEmpty(), "sin protector activo no se toca la pantalla, hubo " + commands);
+
+            Map<String, Object> active = new HashMap<>();
+            active.put("active", Boolean.TRUE);
+            plugin.onEvent("ks.screensaver.state", active);
+            plugin.onEvent("ks.wakeword.detected", new HashMap<String, Object>());
+            Thread.sleep(600);
+            check(commands.contains("stopScreensaver"), "debe dar paso al panel, hubo " + commands);
+
+            Map<String, Object> idle = new HashMap<>();
+            idle.put("active", Boolean.FALSE);
+            plugin.onEvent("ks.voice.interaction", idle); // active=false termina el turno
+            Thread.sleep(600);
+            check(commands.contains("startScreensaver"), "debe devolver el protector, hubo " + commands);
+        } finally { plugin.stop(); }
+    }
+
     private static void reset() {
         published.clear();
         subscribed.clear();
+        commands.clear();
         attempts.set(0);
     }
 
@@ -99,6 +132,8 @@ public final class EilikFaceTest {
                 published.add(a[3]);
             } else if (m.getName().equals("subscribe")) {
                 subscribed.add((String) a[0]);
+            } else if (m.getName().equals("executeCommand")) {
+                commands.add((String) a[0]);
             }
             Class<?> r = m.getReturnType();
             if (r == boolean.class) return false;

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package eilik.face;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -18,7 +19,7 @@ public final class EilikFacePlugin implements KioskPlugin {
     private static final long MIN_GAP_MS = 300; // KS admite 4 publicaciones por segundo
 
     // Diagnóstico opcional: qué hay realmente en pantalla durante un turno de voz.
-    private static final String[] DIAG_EVENTS = {"screensaver.state", "screensaver.view", "screen.state"};
+    private static final String[] DIAG_EVENTS = {"screensaver.view", "screen.state"};
 
     private static final String[] DEMO_SEQ = {"listening", "thinking", "speaking"};
     private static final long[] DEMO_MS = {3000, 3000, 5000};
@@ -36,6 +37,7 @@ public final class EilikFacePlugin implements KioskPlugin {
     private String lastState;
     private long lastPublish;
     private int failures;         // publicaciones seguidas rechazadas por KS
+    private boolean panelShown;   // el protector lo descartamos nosotros para enseñar el panel
     private boolean diag;         // diagnóstico de pantalla activado en ajustes
     private Boolean saverActive, screenOn;
     private String saverView;
@@ -47,6 +49,7 @@ public final class EilikFacePlugin implements KioskPlugin {
         exec = Executors.newSingleThreadScheduledExecutor();
         host.subscribe("wakeword.detected");
         host.subscribe("voice.interaction");
+        host.subscribe("screensaver.state"); // hace falta para devolver el protector tras hablar
         apply(settings);
         publish();
     }
@@ -159,8 +162,37 @@ public final class EilikFacePlugin implements KioskPlugin {
         flushTask = schedule(() -> { synchronized (this) { flushTask = null; publish(); } }, wait);
     }
 
+    /**
+     * Entrega la pantalla al panel mientras dura el turno de voz y devuelve el protector al acabar.
+     * KS oculta la superficie del protector durante el turno, así que la cara solo puede seguir
+     * visible si la dibuja el dashboard. Solo actúa si el protector estaba puesto: si el usuario
+     * estaba usando el kiosko, no se le cambia la pantalla bajo los pies.
+     */
+    private void panel(String state) {
+        boolean want = bool("panelOnVoice", false);
+        boolean talking = want && !"idle".equals(state);
+        if (talking && !panelShown && Boolean.TRUE.equals(saverActive)) {
+            panelShown = true;
+            control("stopScreensaver");
+        } else if (!talking && panelShown) {
+            panelShown = false;
+            control("startScreensaver");
+        }
+    }
+
+    private void control(String command) {
+        try {
+            host.executeCommand(command, Collections.emptyMap(), (ok, data, error) -> {
+                if (!ok) host.log("El comando " + command + " falló: " + error);
+            });
+        } catch (RuntimeException e) {
+            host.log("No se pudo ejecutar " + command + ": " + e.getMessage());
+        }
+    }
+
     private void publish() {
         String state = resolve();
+        panel(state);
         Map<String, Object> o = new LinkedHashMap<>();
         o.put("state", state);
         o.put("eye", str("eyeColor", "#35E0FF"));

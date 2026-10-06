@@ -11,6 +11,25 @@
 
 ### Added
 
+- Accept a list of entities in the card, so a screen near more than one satellite follows whichever
+  is mid-turn.
+
+- Warn when the card's configured entity does not exist, on screen and in the console. The face
+  would otherwise stay idle, which in overlay mode is indistinguishable from the card not working.
+
+- Add an `overlay` option to the card. It contributes no height to the view and draws the face
+  fixed over the dashboard only while a voice turn lasts, without intercepting taps, for views whose
+  single custom card already draws the whole panel.
+
+- Add a Lovelace custom card under `dashboard/` that draws the same face from the `assist_satellite`
+  entity. It updates live from Home Assistant, so it follows a voice turn without recreating its
+  document and its transitions play out in full.
+
+- Add a **Mostrar el panel al hablar** setting that dismisses the screensaver when a voice turn
+  starts and restores it when the turn ends, so the dashboard card is visible while talking. KS
+  hides the screensaver surface for the length of a turn, which no plugin can prevent. It only
+  acts when the screensaver was already on, and needs the new `host.control` capability.
+
 - Add an opt-in **Diagnóstico de pantalla** setting that observes `screensaver.state`,
   `screensaver.view` and `screen.state` and reports them in the plugin status line, to tell a failed
   publication apart from a KS overlay. The diagnostic events never republish the face.
