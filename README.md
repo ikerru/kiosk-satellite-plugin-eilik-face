@@ -139,6 +139,34 @@ mouth: true
 | `size` | `100` | Face size, as a percentage |
 | `mouth` | `false` | Mouth that moves while speaking |
 | `sleep_minutes` | `10` | Idle minutes before falling asleep. `0` never sleeps |
+| `overlay` | `false` | Draw over the dashboard instead of occupying a card. See below |
+
+### Overlaying a dashboard you cannot rearrange
+
+If your view is a single custom card that draws the whole panel, there is no room for a second card
+beside it. Set `overlay: true` and the card takes **no space in the layout** — it renders fixed over
+the dashboard, and only while a voice turn lasts. The rest of the time it is invisible, and it never
+intercepts taps, so the dashboard below stays fully usable.
+
+<img src="docs/images/dashboard-overlay.png" alt="The face floating over a dashboard while the assistant answers" width="700">
+
+```yaml
+views:
+  - panel: true
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: custom:eilik-face-card
+            entity: assist_satellite.your_satellite
+            overlay: true
+          - type: custom:your-panel-card   # your existing panel, unchanged
+```
+
+A `panel: true` view holds exactly one card, so the stack is what lets both live there. The face
+card contributes zero height, so your panel renders as before.
+
+In overlay mode `bg_color` defaults to `#000000b8`, dimming the dashboard behind the face. Use any
+CSS color, including 8-digit hex for transparency, or `#00000000` for no dimming at all.
 
 Then turn on **Show the panel while talking** in the plugin settings. The plugin dismisses the
 screensaver when a voice turn starts and brings it back when the turn ends, so you get the

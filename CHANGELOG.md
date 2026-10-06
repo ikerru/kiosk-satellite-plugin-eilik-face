@@ -11,6 +11,10 @@
 
 ### Added
 
+- Add an `overlay` option to the card. It contributes no height to the view and draws the face
+  fixed over the dashboard only while a voice turn lasts, without intercepting taps, for views whose
+  single custom card already draws the whole panel.
+
 - Add a Lovelace custom card under `dashboard/` that draws the same face from the `assist_satellite`
   entity. It updates live from Home Assistant, so it follows a voice turn without recreating its
   document and its transitions play out in full.

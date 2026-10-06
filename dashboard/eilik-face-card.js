@@ -9,6 +9,12 @@
 const CSS = `
 :host{--eye:#35E0FF;--bg:#000;--s:1;--u:1px;--mh:1.2;display:block}
 .stage{position:relative;height:var(--h,300px);background:var(--bg);overflow:hidden;border-radius:var(--ha-card-border-radius,12px);display:grid;place-items:center}
+/* Modo superpuesto: la tarjeta no ocupa sitio en la vista y la cara se dibuja sobre el panel,
+   solo mientras dura el turno de voz. No intercepta toques en ningún momento. */
+:host(.overlay){height:0;overflow:visible}
+.stage.over{position:fixed;inset:0;height:auto;border-radius:0;z-index:1000;pointer-events:none;
+  opacity:0;visibility:hidden;transition:opacity .35s ease,visibility .35s}
+.stage.over.on{opacity:1;visibility:visible}
 #face{position:relative;display:flex;gap:calc(14*var(--u)*var(--s));align-items:center;
   transform:translate(var(--lx,0),var(--ly,0));transition:transform .35s cubic-bezier(.3,1.4,.5,1)}
 
@@ -80,14 +86,16 @@ class EilikFaceCard extends HTMLElement {
 
     setConfig(config) {
         this._cfg = Object.assign({
-            eye_color: '#35E0FF', bg_color: '#000000', listen_color: '#7CFF8A',
+            eye_color: '#35E0FF', listen_color: '#7CFF8A',
             think_color: '#FFC857', speak_color: '#FF8AD8',
-            size: 100, mouth: false, sleep_minutes: 10, height: 300,
+            size: 100, mouth: false, sleep_minutes: 10, height: 300, overlay: false,
+            // Superpuesta se atenúa lo que hay debajo; como tarjeta normal, fondo opaco.
+            bg_color: config.overlay ? '#000000b8' : '#000000',
         }, config);
         this._build();
     }
 
-    getCardSize() { return Math.ceil(this._cfg.height / 50); }
+    getCardSize() { return this._cfg.overlay ? 1 : Math.ceil(this._cfg.height / 50); }
 
     set hass(hass) {
         this._hass = hass;
@@ -106,6 +114,8 @@ class EilikFaceCard extends HTMLElement {
         this._fx = this._face.querySelector('.fx');
         const stage = this.shadowRoot.querySelector('.stage');
         const c = this._cfg;
+        this.classList.toggle('overlay', !!c.overlay);
+        stage.classList.toggle('over', !!c.overlay);
         this.style.setProperty('--bg', c.bg_color);
         this.style.setProperty('--s', c.size / 100);
         this.style.setProperty('--h', c.height + 'px');
@@ -150,6 +160,9 @@ class EilikFaceCard extends HTMLElement {
         if (state === this._state) return;
         this._stop();
         this._state = state;
+        if (this._cfg.overlay) {
+            this.shadowRoot.querySelector('.stage').classList.toggle('on', state !== 'idle');
+        }
         this._face.className = state;           // CSS transiciona color y forma desde lo anterior
         this._face.classList.toggle('mouth-on', !!this._cfg.mouth && state === 'speaking');
         this._fx.innerHTML = '';
