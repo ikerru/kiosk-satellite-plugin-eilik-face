@@ -2,7 +2,18 @@
 
 ## Unreleased
 
+### Fixed
+
+- Stop a rejected screensaver publication from cascading. A failed call now counts against the KS
+  rate limit, so the next event no longer republishes immediately and keeps the renderer
+  unavailable. Retries back off exponentially and recover the face without further voice events,
+  which could otherwise leave the screensaver black for the length of a conversation.
+
 ### Added
+
+- Add an opt-in **Diagnóstico de pantalla** setting that observes `screensaver.state`,
+  `screensaver.view` and `screen.state` and reports them in the plugin status line, to tell a failed
+  publication apart from a KS overlay. The diagnostic events never republish the face.
 
 - Add a Status tile demo group that publishes a Hello World demo tile on the Remote Admin Overview Status panel, with a toggle, a level selection and a text setting. Document the SDK 1 status tile API, its limits, lifecycle and the `getPluginStatusTiles` remote command.
 

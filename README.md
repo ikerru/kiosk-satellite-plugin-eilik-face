@@ -72,6 +72,7 @@ thinking and speaking without saying a word.
 | Listening color | `listenColor` | `#7CFF8A` | |
 | Thinking color | `thinkColor` | `#FFC857` | |
 | Speaking color | `speakColor` | `#FF8AD8` | |
+| Screen diagnostics | `diagnostics` | `false` | Reports what is actually on screen. See [Troubleshooting](#troubleshooting) |
 
 All settings save automatically and refresh the running screensaver.
 
@@ -96,7 +97,30 @@ events. These only distinguish *listening* (held for 30 seconds, or until the in
 from *idle*.
 
 Face changes are coalesced and published at most once every 300 ms, within the SDK's limit of four
-screensaver publications per second.
+screensaver publications per second. If KS rejects a publication anyway, the plugin backs off
+exponentially (up to about 4.8 s) and keeps retrying on its own, so the face comes back even when no
+further voice events arrive.
+
+## Troubleshooting
+
+### The screen goes black while I am talking
+
+KS shows a **black background when a plugin's renderer is unavailable**, so a black screen means the
+face is not published — not that something is covering it. Turn on **Screen diagnostics** in the
+plugin settings and watch the plugin status line during a voice turn. It appends what KS reports:
+
+```text
+Cara: speaking (entidad) · protector: activo, vista: dim, pantalla: encendida
+```
+
+- **`No se pudo publicar la cara: ...`** in the status or log means KS is rejecting the publication,
+  usually the four-per-second limit. The plugin now backs off and recovers by itself.
+- **`protector: activo`** with the face still black points at KS rather than the plugin: full-screen
+  Now Playing removes the rendered document, and dim mode has no overlay at all.
+- **`pantalla: apagada`** means the display itself went off, which is screen-off policy, not the face.
+
+Turn the setting back off afterwards. The diagnostic events never republish the face, so leaving it
+on does not add screensaver churn — it only adds log noise.
 
 ## Notes and limits
 
