@@ -11,6 +11,9 @@
 
 ### Added
 
+- Accept a list of entities in the card, so a screen near more than one satellite follows whichever
+  is mid-turn.
+
 - Warn when the card's configured entity does not exist, on screen and in the console. The face
   would otherwise stay idle, which in overlay mode is indistinguishable from the card not working.
 

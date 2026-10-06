@@ -132,7 +132,7 @@ mouth: true
 
 | Option | Default | |
 |---|---|---|
-| `entity` | — | Your `assist_satellite.*` entity |
+| `entity` | — | Your `assist_satellite.*` entity, or a list of them. With several, the face follows whichever is mid-turn |
 | `height` | `300` | Card height in pixels |
 | `eye_color` / `bg_color` | `#35E0FF` / `#000000` | Idle eye and background |
 | `listen_color` / `think_color` / `speak_color` | `#7CFF8A` / `#FFC857` / `#FF8AD8` | |

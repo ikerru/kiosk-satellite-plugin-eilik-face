@@ -95,6 +95,9 @@ class EilikFaceCard extends HTMLElement {
             // Superpuesta se atenúa lo que hay debajo; como tarjeta normal, fondo opaco.
             bg_color: config.overlay ? '#000000b8' : '#000000',
         }, config);
+        // `entity` admite un id o una lista de ids.
+        this._entities = [].concat(this._cfg.entity || []).filter(Boolean);
+        this._warned = new Set();
         this._build();
     }
 
@@ -102,17 +105,26 @@ class EilikFaceCard extends HTMLElement {
 
     set hass(hass) {
         this._hass = hass;
-        const id = this._cfg.entity;
-        const e = id ? hass.states[id] : null;
-        // Sin entidad válida la cara se queda en reposo, que superpuesta es invisible. Avisar es
-        // la única forma de que un id mal escrito no parezca que la tarjeta no funciona.
-        if (id && !e && !this._warned) {
-            this._warned = true;
-            console.warn(`[eilik-face-card] La entidad "${id}" no existe en Home Assistant. ` +
-                'La cara se quedará en reposo. Revisa el id en Herramientas de desarrollo > Estados.');
-            this._notice(`Entidad desconocida: ${id}`);
+        // Con varias entidades la cara sigue a la primera que esté en mitad de un turno, de modo
+        // que una pantalla con dos satélites cerca reacciona al que le hablen.
+        let state = 'idle';
+        for (const id of this._entities) {
+            const e = hass.states[id];
+            if (!e) { this._missing(id); continue; }
+            const face = FACE[e.state];
+            if (face) { state = face; break; }
         }
-        this._go(e ? (FACE[e.state] || 'idle') : 'idle');
+        this._go(state);
+    }
+
+    /** Sin entidad válida la cara se queda en reposo, que superpuesta es invisible. Avisar es la
+     *  única forma de que un id mal escrito no parezca que la tarjeta no funciona. */
+    _missing(id) {
+        if (this._warned.has(id)) return;
+        this._warned.add(id);
+        console.warn(`[eilik-face-card] La entidad "${id}" no existe en Home Assistant. ` +
+            'La cara no reaccionará a ella. Revisa el id en Herramientas de desarrollo > Estados.');
+        this._notice(`Entidad desconocida: ${id}`);
     }
 
     /** Aviso visible unos segundos, para que un fallo de configuración no pase desapercibido. */
